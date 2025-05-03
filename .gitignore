@@ -4,3 +4,4 @@
 *.pdf
 *.mov
 *.bin
+.DS_Store
