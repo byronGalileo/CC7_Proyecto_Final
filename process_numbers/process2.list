@@ -679,9 +679,9 @@ Disassembly of section .text:
 800209d0:	3d3d3d3d 	ldccc	13, cr3, [sp, #-244]!	@ 0xffffff0c
 800209d4:	3d3d3d3d 	ldccc	13, cr3, [sp, #-244]!	@ 0xffffff0c
 800209d8:	3d3d3d3d 	ldccc	13, cr3, [sp, #-244]!	@ 0xffffff0c
-800209dc:	0a203d3d 	beq	8082fed8 <_stack_top+0x7cfed8>
+800209dc:	0a203d3d 	beq	8082fed8 <_stack_top+0x806ed8>
 800209e0:	00000000 	andeq	r0, r0, r0
-800209e4:	0a206425 	beq	80839a80 <_stack_top+0x7d9a80>
+800209e4:	0a206425 	beq	80839a80 <_stack_top+0x810a80>
 	...
 
 Disassembly of section .ARM.attributes:
@@ -739,7 +739,7 @@ Disassembly of section .debug_frame:
 Disassembly of section .debug_line_str:
 
 00000000 <.debug_line_str>:
-   0:	6c6f562f 	stclvs	6, cr5, [pc], #-188	@ ffffff4c <_stack_top+0x7ff9ff4c>
+   0:	6c6f562f 	stclvs	6, cr5, [pc], #-188	@ ffffff4c <_stack_top+0x7ffd6f4c>
    4:	73656d75 	cmnvc	r5, #7488	@ 0x1d40
    8:	7461642f 	strbtvc	r6, [r1], #-1071	@ 0xfffffbd1
    c:	656a2f61 	strbvs	r2, [sl, #-3937]!	@ 0xfffff09f
@@ -748,7 +748,7 @@ Disassembly of section .debug_line_str:
   18:	70736b72 	rsbsvc	r6, r3, r2, ror fp
   1c:	2f656361 	svccs	0x00656361
   20:	2d554e47 	ldclcs	14, cr4, [r5, #-284]	@ 0xfffffee4
-  24:	6c6f6f74 	stclvs	15, cr6, [pc], #-464	@ fffffe5c <_stack_top+0x7ff9fe5c>
+  24:	6c6f6f74 	stclvs	15, cr6, [pc], #-464	@ fffffe5c <_stack_top+0x7ffd6e5c>
   28:	69616863 	stmdbvs	r1!, {r0, r1, r5, r6, fp, sp, lr}^
   2c:	72612f6e 	rsbvc	r2, r1, #440	@ 0x1b8
   30:	34312d6d 	ldrtcc	r2, [r1], #-3437	@ 0xfffff293
