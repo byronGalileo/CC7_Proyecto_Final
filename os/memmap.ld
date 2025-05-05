@@ -1,24 +1,25 @@
 MEMORY
 {
-    ram : ORIGIN =  0x80000000, LENGTH = 256K
+    OS_CODE       : ORIGIN = 0x80000000, LENGTH = 64K
+    OS_STACK      : ORIGIN = 0x80008000, LENGTH = 4K
 }
 
 SECTIONS
 {
-    . = ORIGIN(ram);
-
+    /* OS Code and Data */
+    . = ORIGIN(OS_CODE);
     .text :
     {
         *(.text*)
         *(.rodata*)
-    } > ram
+    } > OS_CODE
 
     .data : AT(ADDR(.text) + SIZEOF(.text))
     {
         __data_start__ = .;
         *(.data*)
         __data_end__ = .;
-    } > ram
+    } > OS_CODE
 
     .bss :
     {
@@ -26,8 +27,9 @@ SECTIONS
         *(.bss*)
         *(COMMON)
         __bss_end__ = .;
-    } > ram
+    } > OS_CODE
 
-    _stack_bottom = __bss_end__;
-    _stack_top = ORIGIN(ram) + LENGTH(ram);
+    /* Define OS Stack Top and Bottom */
+    _os_stack_bottom = ORIGIN(OS_STACK);
+    _os_stack_top    = ORIGIN(OS_STACK) + LENGTH(OS_STACK);
 }

@@ -1,6 +1,9 @@
 /* os.c */
 #include "os.h"
 
+PCB pcb[NUM_TASKS];
+int current_task = 0;
+
 unsigned int seed = 12345;
 unsigned int rand(void) {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;

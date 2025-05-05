@@ -26,6 +26,16 @@ extern void enable_irq(void);
 #define CM_PER_BASE      0x44E00000
 #define CM_PER_TIMER2_CLKCTRL (CM_PER_BASE + 0x80)
 
+#define NUM_TASKS 2
+
+extern PCB pcb[NUM_TASKS];
+extern int current_task;
+
+typedef struct {
+    unsigned int *sp; // Saved stack pointer
+    int state;        // (Opcional) Estado del proceso
+} PCB;
+
 unsigned int rand(void);
 void uart_putc(char c);
 char uart_getc();
@@ -37,6 +47,7 @@ int32_t uart_atof(const char *str);
 void uart_ftoa(float f, char *buffer, int precision);
 void timer_init(void);
 void timer_irq_handler(void);
+void context_switch(void);
 void delay_loop();
 
 #endif // OS_H
