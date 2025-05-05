@@ -43,10 +43,43 @@ vector_table:
     b .
 
 irq_handler:
+    /* original
     push {r0-r12, lr}
     bl timer_irq_handler
     pop {r0-r12, lr}
     subs pc, lr, #4
+     */
+    // Guardar contexto actual
+    mrs r0, cpsr
+    push {r0}
+    push {r1-r12, lr}
+
+    // Guardar SP en PCB[current_task]
+    ldr r1, =pcb
+    ldr r2, =current_task
+    ldr r3, [r2]
+    lsl r3, r3, #3          // offset = current_task * sizeof(PCB)
+    add r1, r1, r3
+    str sp, [r1]
+
+    // Llamar a context_switch()
+    bl context_switch
+
+    // Cargar SP del nuevo proceso
+    ldr r1, =pcb
+    ldr r2, =current_task
+    ldr r3, [r2]
+    lsl r3, r3, #3
+    add r1, r1, r3
+    ldr sp, [r1]
+
+    // Restaurar contexto
+    pop {r1-r12, lr}
+    pop {r0}
+    msr cpsr_c, r0
+
+    subs pc, lr, #4
+
 
 .section .bss
 .align 4

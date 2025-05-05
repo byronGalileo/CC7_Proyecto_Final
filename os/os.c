@@ -230,3 +230,18 @@ void timer_irq_handler(void) {
 void delay_loop(void) {
     for (volatile int i = 0; i < 100000000; i++);
 }
+
+void context_switch(void) {
+    current_task = (current_task + 1) % NUM_TASKS;
+}
+
+void os_init_tasks() {
+    pcb[0].sp = STACK1_TOP - 16;
+    pcb[1].sp = STACK2_TOP - 16;
+
+    // Simular contexto guardado con PC y CPSR
+    pcb[0].sp[15] = (unsigned int)TASK1_ENTRY;
+    pcb[0].sp[14] = 0x60000010;  // CPSR modo usuario
+    pcb[1].sp[15] = (unsigned int)TASK2_ENTRY;
+    pcb[1].sp[14] = 0x60000010;
+}
