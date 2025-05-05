@@ -49,12 +49,15 @@ irq_handler:
     pop {r0-r12, lr}
     subs pc, lr, #4
      */
-    // Guardar contexto actual
+    // Save current context
     mrs r0, cpsr
     push {r0}
     push {r1-r12, lr}
 
-    // Guardar SP en PCB[current_task]
+    // Call timer_irq_handler to acknowledge interrupt
+    bl timer_irq_handler
+
+    // Save SP in PCB[current_task].sp
     ldr r1, =pcb
     ldr r2, =current_task
     ldr r3, [r2]
@@ -62,10 +65,10 @@ irq_handler:
     add r1, r1, r3
     str sp, [r1]
 
-    // Llamar a context_switch()
+    // Switch to next task
     bl context_switch
 
-    // Cargar SP del nuevo proceso
+    // Load SP of new task
     ldr r1, =pcb
     ldr r2, =current_task
     ldr r3, [r2]
@@ -73,13 +76,12 @@ irq_handler:
     add r1, r1, r3
     ldr sp, [r1]
 
-    // Restaurar contexto
+    // Restore context
     pop {r1-r12, lr}
     pop {r0}
     msr cpsr_c, r0
 
-    subs pc, lr, #4
-
+    subs pc, lr, #4 // Return from interrupt
 
 .section .bss
 .align 4
