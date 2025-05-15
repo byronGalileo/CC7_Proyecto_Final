@@ -2,7 +2,7 @@
 #include "os.h"
 
 PCB pcb[NUM_TASKS];
-int current_task = 0;
+int current_task = 1;
 
 unsigned int seed = 12345;
 unsigned int rand(void) {
@@ -231,17 +231,24 @@ void delay_loop(void) {
     for (volatile int i = 0; i < 100000000; i++);
 }
 
+int schedule_state = 0;
+
 void context_switch(void) {
     current_task = (current_task + 1) % NUM_TASKS;
 }
 
-void os_init_tasks() {
-    pcb[0].sp = STACK1_TOP - 16;
-    pcb[1].sp = STACK2_TOP - 16;
 
-    // Simular contexto guardado con PC y CPSR
-    pcb[0].sp[15] = (unsigned int)TASK1_ENTRY;
-    pcb[0].sp[14] = 0x60000010;  // CPSR modo usuario
-    pcb[1].sp[15] = (unsigned int)TASK2_ENTRY;
+void os_init_tasks() {
+    // OS task (dummy context)
+    pcb[0].sp = STACK_OS_TOP - 16;
+    pcb[0].sp[15] = (unsigned int)OS_ENTRY;  // Podría ser cualquier handler del OS
+    pcb[0].sp[14] = 0x60000010;
+
+    pcb[1].sp = STACK1_TOP - 16;
+    pcb[1].sp[15] = (unsigned int)TASK1_ENTRY;
     pcb[1].sp[14] = 0x60000010;
+
+    pcb[2].sp = STACK2_TOP - 16;
+    pcb[2].sp[15] = (unsigned int)TASK2_ENTRY;
+    pcb[2].sp[14] = 0x60000010;
 }
