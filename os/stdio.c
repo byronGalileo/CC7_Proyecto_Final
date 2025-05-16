@@ -35,13 +35,14 @@ void PRINT(const char *format, ...) {
                     to_string(va_arg(args, int), buffer);
                     uart_puts(buffer);
                     break;
-                case 'x':  // Integer (hexadecimal)
+                case 'x':{  // Integer (hexadecimal)
                     unsigned int num = va_arg(args, unsigned int);
                     uart_puts("0x");
                     for (int i = 28; i >= 0; i -= 4) {
                         uart_putc(hex[(num >> i) & 0xF]);
                     }
                     break;
+                }
                 case 's':  // String
                     str = va_arg(args, const char *);
                     uart_puts(str);

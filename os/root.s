@@ -43,45 +43,11 @@ vector_table:
     b .
 
 irq_handler:
-    /* original
-    push {r0-r12, lr}
-    bl timer_irq_handler
-    pop {r0-r12, lr}
-    subs pc, lr, #4
-     */
-    // Save current context
-    mrs r0, cpsr
-    push {r0}
-    push {r1-r12, lr}
+    push {r0-r12, lr}        @ Guarda registros generales
+    bl timer_irq_handler     @ Llama al manejador C que hace PUT32 para limpiar el timer y escribe "Tick"
+    pop {r0-r12, lr}         @ Restaura los registros
+    subs pc, lr, #4          @ Retorna de la interrupción
 
-    // Call timer_irq_handler to acknowledge interrupt
-    bl timer_irq_handler
-
-    // Save SP in PCB[current_task].sp
-    ldr r1, =pcb
-    ldr r2, =current_task
-    ldr r3, [r2]
-    lsl r3, r3, #3          // offset = current_task * sizeof(PCB)
-    add r1, r1, r3
-    str sp, [r1]
-
-    // Switch to next task
-    bl context_switch
-
-    // Load SP of new task
-    ldr r1, =pcb
-    ldr r2, =current_task
-    ldr r3, [r2]
-    lsl r3, r3, #3
-    add r1, r1, r3
-    ldr sp, [r1]
-
-    // Restore context
-    pop {r1-r12, lr}
-    pop {r0}
-    msr cpsr_c, r0
-
-    subs pc, lr, #4 // Return from interrupt
 
 .section .bss
 .align 4
