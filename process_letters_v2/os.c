@@ -1,4 +1,5 @@
 #include "os.h"
+#include "os/pcb.h"
 
 extern void PUT32(unsigned int addr, unsigned int value);
 extern unsigned int GET32(unsigned int addr);
@@ -193,6 +194,19 @@ void uart_ftoa(float num, char *buffer, int precision) {
     }
 
     *buffer = '\0';
+}
+
+void timer_irq_handler(void) {
+    // Acknowledge the interrupt and print debug info
+    PUT32(0x48040028, 0x2);      // TISR - clear overflow interrupt
+    PUT32(0x48200048, 0x1);      // INTC_CONTROL - acknowledge IRQ
+
+    // Confirm we're alive
+    uart_puts("[P1 IRQ] Timer interrupt!\n");
+
+    // Force switch to OS
+    extern int current_task;
+    current_task = 0;
 }
 
 void delay_loop(void) {
