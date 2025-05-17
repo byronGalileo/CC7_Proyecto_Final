@@ -43,45 +43,32 @@ vector_table:
     b .
 
 irq_handler:
-    /* original
-    push {r0-r12, lr}
-    bl timer_irq_handler
-    pop {r0-r12, lr}
-    subs pc, lr, #4
-     */
     // Save current context
     mrs r0, cpsr
     push {r0}
     push {r1-r12, lr}
 
-    // Call timer_irq_handler to acknowledge interrupt
-    bl timer_irq_handler
-
-    // Save SP in PCB[current_task].sp
     ldr r1, =pcb
     ldr r2, =current_task
     ldr r3, [r2]
-    lsl r3, r3, #3          // offset = current_task * sizeof(PCB)
+    lsl r3, r3, #4
     add r1, r1, r3
-    str sp, [r1]
+    str sp, [r1]              // pcb[current_task].sp = sp
 
-    // Switch to next task
+    bl timer_irq_handler
     bl context_switch
 
-    // Load SP of new task
     ldr r1, =pcb
     ldr r2, =current_task
     ldr r3, [r2]
-    lsl r3, r3, #3
+    lsl r3, r3, #4
     add r1, r1, r3
-    ldr sp, [r1]
+    ldr sp, [r1]              // sp = pcb[current_task].sp
 
-    // Restore context
     pop {r1-r12, lr}
     pop {r0}
     msr cpsr_c, r0
-
-    subs pc, lr, #4 // Return from interrupt
+    subs pc, lr, #4
 
 .section .bss
 .align 4

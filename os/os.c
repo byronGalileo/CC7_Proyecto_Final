@@ -1,195 +1,14 @@
 /* os.c */
 #include "os.h"
+#include "stdio.h"
 
 PCB pcb[NUM_TASKS];
-int current_task = 1;
+int current_task = 0;
 
 unsigned int seed = 12345;
 unsigned int rand(void) {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return seed;
-}
-
-// Function to send a single character via UART
-void uart_putc(char c) {
-    // Wait until Transmit Holding Register is empty
-    while (!(GET32(UART_LSR) & UART_LSR_THRE));
-    
-    // Write character to Transmit Holding Register
-    PUT32(UART_THR, c);
-}
-
-// Function to receive a single character from UART
-char uart_getc() {
-    // Wait until data is available in the Receive Holding Register
-    while (!(GET32(UART_LSR) & UART_LSR_DR));
-
-    // Read character from Receive Holding Register
-    return (char)GET32(UART_RHR);
-}
-
-// Function to send a string via UART
-void uart_puts(const char *s) {
-    while (*s) {
-        uart_putc(*s++);
-    }
-}
-
-// Function to receive a line of input via UART
-void uart_gets_input(char *buffer, int max_length) {
-    int i = 0;
-    char c;
-    while (i < max_length - 1) {
-        c = uart_getc();
-
-        // Handle newline and carriage return (consume both)
-        if (c == '\r' || c == '\n') {
-            uart_putc('\n'); // Echo newline
-            // Also consume the other part of CRLF if it exists
-            char next = uart_getc();
-            if ((c == '\r' && next != '\n') || (c == '\n' && next != '\r')) {
-                // If not a pair, push it back (optional)
-            }
-            break;
-        }
-
-        if (c == 0x08 || c == 0x7F) { // Backspace or DEL
-            if (i > 0) {
-                uart_putc('\b');
-                uart_putc(' ');
-                uart_putc('\b');
-                i--;
-            }
-        } else {
-            uart_putc(c);
-            buffer[i++] = c;
-        }
-    }
-    buffer[i] = '\0';
-}
-
-// Simple function to convert string to integer
-int uart_atoi(const char *s) {
-    int num = 0;
-    int sign = 1;
-    int i = 0;
-
-    // Handle optional sign
-    if (s[i] == '-') {
-        sign = -1;
-        i++;
-    }
-
-    for (; s[i] >= '0' && s[i] <= '9'; i++) {
-        num = num * 10 + (s[i] - '0');
-    }
-
-    return sign * num;
-}
-
-// Function to convert integer to string
-void uart_itoa(int num, char *buffer) {
-    int i = 0;
-    int is_negative = 0;
-
-    if (num == 0) {
-        buffer[i++] = '0';
-        buffer[i] = '\0';
-        return;
-    }
-
-    if (num < 0) {
-        is_negative = 1;
-        num = -num;
-    }
-
-    while (num > 0 && i < 14) { // Reserve space for sign and null terminator
-        buffer[i++] = '0' + (num % 10);
-        num /= 10;
-    }
-
-    if (is_negative) {
-        buffer[i++] = '-';
-    }
-
-    buffer[i] = '\0';
-
-    // Reverse the string
-    int start = 0, end = i - 1;
-    char temp;
-    while (start < end) {
-        temp = buffer[start];
-        buffer[start] = buffer[end];
-        buffer[end] = temp;
-        start++;
-        end--;
-    }
-}
-
-// Convert string to float
-// Parses a string into a fixed-point integer (e.g., "3.14" -> 3140)
-int32_t uart_atof(const char *s) {
-    int32_t result = 0, fraction = 0;
-    int32_t sign = 1, i = 0, decimal_found = 0;
-    int32_t divisor = 1;
-
-    if (s[i] == '-') {
-        sign = -1;
-        i++;
-    }
-
-    while (s[i]) {
-        if (s[i] == '.') {
-            decimal_found = 1;
-            i++;
-            continue;
-        }
-
-        if (s[i] >= '0' && s[i] <= '9') {
-            if (decimal_found) {
-                fraction = fraction * 10 + (s[i] - '0');
-                divisor *= 10;
-            } else {
-                result = result * 10 + (s[i] - '0');
-            }
-        } else {
-            break;
-        }
-        i++;
-    }
-
-    // Combine integer + fractional parts (e.g., "3.14" -> 3140)
-    return sign * (result * 1000 + (fraction * 1000 / divisor));
-}
-
-// Function to print a float
-void uart_ftoa(float num, char *buffer, int precision) {
-    if (num < 0) {
-        *buffer++ = '-';
-        num = -num;
-    }
-
-    int integerPart = (int)num;
-    float fractionalPart = num - (float)integerPart;
-
-    // Convert integer part to string
-    uart_itoa(integerPart, buffer);
-
-    // Find end of string
-    while (*buffer) buffer++;
-
-    // Add decimal point
-    *buffer++ = '.';
-
-    // Convert fractional part
-    for (int j = 0; j < precision; j++) {
-        fractionalPart *= 10;
-        int digit = (int)fractionalPart;
-        *buffer++ = '0' + digit;
-        fractionalPart -= digit;
-    }
-
-    *buffer = '\0';
 }
 
 void timer_init(void) {
@@ -222,33 +41,64 @@ void timer_init(void) {
 }
 
 void timer_irq_handler(void) {
+    char buf[10];
     PUT32(TISR, 0x2);
     PUT32(INTC_CONTROL, 0x1);
     uart_puts("Tick\n");
+    uart_puts("Tick - Task ");
+    uart_itoa(current_task, buf);
+    uart_puts(buf);
+    uart_putc('\n');
+
 }
 
 void delay_loop(void) {
     for (volatile int i = 0; i < 100000000; i++);
 }
 
-int schedule_state = 0;
+void init_task_stack(PCB *task, void (*entry)(void), unsigned int *stack_top) {
+    volatile unsigned int *sp = stack_top;
+
+    // Simular el contexto que espera el irq_handler
+    sp--; *sp = 0x60000010;            // CPSR
+    for (int i = 0; i < 12; i++)       // R12 a R1
+        sp--; *sp = 0;
+    sp--; *sp = 0;                     // R0
+    sp--; *sp = (unsigned int)entry;   // Fake LR ← debe ser el último valor poppeado
+
+    task->sp = (unsigned int *)sp;
+    task->stack = stack_top;
+    task->state = 0;
+}
+
+void os_init_tasks(void) {
+    current_task = 0;
+    init_task_stack(&pcb[0], (void *)OS_ENTRY, (unsigned int *)STACK_OS_TOP);
+    init_task_stack(&pcb[1], (void *)TASK1_ENTRY, (unsigned int *)STACK1_TOP);
+    init_task_stack(&pcb[2], (void *)TASK2_ENTRY, (unsigned int *)STACK2_TOP);
+}
 
 void context_switch(void) {
     current_task = (current_task + 1) % NUM_TASKS;
 }
 
+int main() {
+    PRINT(" \n=================== STARTING OS =================== \n");
+    PRINT("Starting...\n");
+    PRINT("Init tasks...\n");
+    os_init_tasks();
+    PRINT("Tasks initialized!\n");
 
-void os_init_tasks() {
-    // OS task (dummy context)
-    pcb[0].sp = STACK_OS_TOP - 16;
-    pcb[0].sp[15] = (unsigned int)OS_ENTRY;  // Podría ser cualquier handler del OS
-    pcb[0].sp[14] = 0x60000010;
+    timer_init();
+    enable_irq();
 
-    pcb[1].sp = STACK1_TOP - 16;
-    pcb[1].sp[15] = (unsigned int)TASK1_ENTRY;
-    pcb[1].sp[14] = 0x60000010;
+    PRINT("Initial TCRR: \n");
+    PRINT("%x \n", GET32(TCRR));
 
-    pcb[2].sp = STACK2_TOP - 16;
-    pcb[2].sp[15] = (unsigned int)TASK2_ENTRY;
-    pcb[2].sp[14] = 0x60000010;
+    // Cargar SP inicial y saltar a proceso 1    
+    while (1) {
+        PRINT("%d \n", rand() % 1000);
+        for (volatile int i = 0; i < 100000000; i++);
+    }
+    return 0;
 }
