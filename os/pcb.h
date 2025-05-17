@@ -2,14 +2,16 @@
 #define PCB_H
 
 typedef struct {
-    const char *name;
-    void (*entry_point)(void);
-    unsigned int *stack_ptr;
-    unsigned int pid;
+    unsigned int *sp;         // Stack pointer actual del proceso
+    void (*entry)(void);      // Dirección de entrada del proceso
+    int pid;                  // ID (0 = OS, 1 = P1, 2 = P2)
 } PCB;
 
-// Podés declarar una tabla de procesos aquí si querés inicializarla en un .c
-extern PCB process_table[];
-extern const int process_count;
+#define NUM_TASKS 3
 
-#endif // PCB_H
+extern PCB pcbs[NUM_TASKS];
+extern int current_task;
+void os_init_tasks(void);
+
+
+#endif

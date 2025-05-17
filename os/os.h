@@ -35,27 +35,30 @@ extern void enable_irq(void);
 
 #define NUM_TASKS 3
 
-typedef struct {
-    unsigned int *sp; // Saved stack pointer
-    int state;        // (Opcional) Estado del proceso
-} PCB;
+// typedef struct {
+//     unsigned int *sp; // Saved stack pointer
+//     int state;        // (Opcional) Estado del proceso
+// } PCB;
 
-extern PCB pcb[NUM_TASKS];
+// extern PCB pcb[NUM_TASKS];
 extern int current_task;
 
 unsigned int rand(void);
 void uart_putc(char c);
 char uart_getc();
+
 void uart_puts(const char *s);
 void uart_gets_input(char *buffer, int max_length);
 int uart_atoi(const char *s);
 void uart_itoa(int num, char *buffer);
+void uart_puthex(unsigned int num);
+void print_hex_uart(unsigned int val);
 int32_t uart_atof(const char *str);
 void uart_ftoa(float f, char *buffer, int precision);
 void timer_init(void);
 void timer_irq_handler(void);
 void context_switch(void);
-void os_init_tasks();
+// void os_init_tasks();
 void delay_loop();
 
 #endif // OS_H

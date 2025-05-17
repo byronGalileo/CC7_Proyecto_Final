@@ -1,9 +1,9 @@
 /* os.c */
 #include "os.h"
-// #include "pcb.h"
+#include "pcb.h"
 
-PCB pcb[NUM_TASKS];
-int current_task = 1;
+// PCB pcb[NUM_TASKS];
+// int current_task = 1;
 
 unsigned int seed = 12345;
 unsigned int rand(void) {
@@ -36,6 +36,15 @@ void uart_puts(const char *s) {
         uart_putc(*s++);
     }
 }
+
+void print_hex_uart(unsigned int val) {
+    char buf[16];
+    uart_puts("[IRQ] JUMP TO: ");
+    uart_itoa(val, buf);  // Si querés, usa uart_puthex
+    uart_puts(buf);
+    uart_putc('\n');
+}
+
 
 
 // Function to receive a line of input via UART
@@ -89,6 +98,15 @@ int uart_atoi(const char *s) {
 
     return sign * num;
 }
+
+void uart_puthex(unsigned int num) {
+    const char *hex = "0123456789ABCDEF";
+    uart_puts("0x");
+    for (int i = 28; i >= 0; i -= 4) {
+        uart_putc(hex[(num >> i) & 0xF]);
+    }
+}
+
 
 // Function to convert integer to string
 void uart_itoa(int num, char *buffer) {
@@ -224,11 +242,46 @@ void timer_init(void) {
     // Timer initialized ...
 }
 
+// void timer_irq_handler(void) {
+//     uart_puts("[IRQ] Tick!\n");
+//     PUT32(TISR, 0x2);         // Clear timer overflow
+//     PUT32(INTC_CONTROL, 0x1); // Acknowledge interrupt to interrupt controller
+// }
+
 void timer_irq_handler(void) {
-    uart_puts("[IRQ] Tick!\n");
-    PUT32(TISR, 0x2);         // Clear timer overflow
-    PUT32(INTC_CONTROL, 0x1); // Acknowledge interrupt to interrupt controller
+    PUT32(TISR, 0x2);
+    PUT32(INTC_CONTROL, 0x1);
+
+    uart_puts("[IRQ] Tick! Switching...\n");
+
+    // Mostrar current_task
+    uart_puts("[IRQ] current_task (antes): ");
+    char buf[16];
+    uart_itoa(current_task, buf);
+    uart_puts(buf);
+    uart_putc('\n');
+
+    // Guardar SP actual
+    // asm volatile ("mov %0, sp" : "=r"(pcbs[current_task].sp));
+
+    // Switching quemado
+    if (current_task == 0)
+        current_task = 1;
+    else if (current_task == 1)
+        current_task = 2;
+    else
+        current_task = 0;
+
+    uart_puts("[IRQ] current_task (después): ");
+    uart_itoa(current_task, buf);
+    uart_puts(buf);
+    uart_putc('\n');
+
+    // Cargar SP del nuevo proceso
+    // asm volatile ("mov sp, %0" :: "r"(pcbs[current_task].sp));
 }
+
+
 
 void delay_loop(void) {
     for (volatile int i = 0; i < 100000000; i++);
@@ -241,17 +294,17 @@ void context_switch(void) {
 }
 
 
-void os_init_tasks() {
-    // OS task (dummy context)
-    pcb[0].sp = STACK_OS_TOP - 16;
-    pcb[0].sp[15] = (unsigned int)OS_ENTRY;  // Podría ser cualquier handler del OS
-    pcb[0].sp[14] = 0x60000010;
+// void os_init_tasks() {
+//     // OS task (dummy context)
+//     pcb[0].sp = STACK_OS_TOP - 16;
+//     pcb[0].sp[15] = (unsigned int)OS_ENTRY;  // Podría ser cualquier handler del OS
+//     pcb[0].sp[14] = 0x60000010;
 
-    pcb[1].sp = STACK1_TOP - 16;
-    pcb[1].sp[15] = (unsigned int)TASK1_ENTRY;
-    pcb[1].sp[14] = 0x60000010;
+//     pcb[1].sp = STACK1_TOP - 16;
+//     pcb[1].sp[15] = (unsigned int)TASK1_ENTRY;
+//     pcb[1].sp[14] = 0x60000010;
 
-    pcb[2].sp = STACK2_TOP - 16;
-    pcb[2].sp[15] = (unsigned int)TASK2_ENTRY;
-    pcb[2].sp[14] = 0x60000010;
-}
+//     pcb[2].sp = STACK2_TOP - 16;
+//     pcb[2].sp[15] = (unsigned int)TASK2_ENTRY;
+//     pcb[2].sp[14] = 0x60000010;
+// }

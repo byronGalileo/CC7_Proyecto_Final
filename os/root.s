@@ -59,11 +59,73 @@ vector_table:
     b .
 
 irq_handler:
-    push {r0-r12, lr}        @ Guarda registros generales
-    bl timer_irq_handler     @ Llama al manejador C que hace PUT32 para limpiar el timer y escribe "Tick"
-    pop {r0-r12, lr}         @ Restaura los registros
-    subs pc, lr, #4          @ Retorna de la interrupción
+    // UART base
+    ldr r0, =0x44E09000
 
+    // A: Entrando al handler
+    mov r1, #'A'
+    str r1, [r0]
+
+    // Llamar al handler en C (no modificar sp allí)
+    bl timer_irq_handler
+
+    // B: Después del handler
+    mov r1, #'B'
+    str r1, [r0]
+
+    // Cargar current_task
+    ldr r1, =current_task
+    ldr r2, [r1]         // r2 = current_task
+
+    // C: Después de leer current_task
+    mov r1, #'C'
+    str r1, [r0]
+
+    // Calcular dirección de pcbs[current_task]
+    ldr r3, =pcbs
+    mov r4, #12          // sizeof(PCB) = 3 * 4 bytes
+    mul r2, r2, r4
+    add r3, r3, r2       // r3 = &pcbs[current_task]
+
+    // D: Después de calcular dirección del PCB
+    mov r1, #'D'
+    str r1, [r0]
+
+    // Cargar SP desde PCB
+    ldr r5, [r3]         // r5 = pcbs[current_task].sp
+    mov sp, r5
+
+    // E: Después de mover SP
+    mov r1, #'E'
+    str r1, [r0]
+
+    // Cargar ENTRY desde PCB
+    ldr r6, [r3, #4]     // r6 = pcbs[current_task].entry
+
+    // F: Después de cargar ENTRY
+    mov r1, #'F'
+    str r1, [r0]
+
+    // Mostrar dirección del salto
+    mov r0, r6
+    bl print_hex_uart
+
+    // G: Después del print
+    ldr r0, =0x44E09000
+    mov r1, #'G'
+    str r1, [r0]
+
+    // Si es tarea 0 (OS), no saltar
+    cmp r2, #0
+    beq return_to_os
+
+    // Saltar al proceso
+    bx r6
+
+return_to_os:
+    mov r1, #'Z'
+    str r1, [r0]
+    subs pc, lr, #4
 
 .section .bss
 .align 4
