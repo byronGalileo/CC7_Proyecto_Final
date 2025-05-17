@@ -26,7 +26,7 @@ echo "Linking object files..."
 arm-none-eabi-gcc -T memmap root.o os.o stdio.o process2.o -o process2.elf -lgcc -lm -nostartfiles -mfpu=neon -mfloat-abi=hard
 
 echo "Converting ELF to binary..."
-arm-none-eabi-objcopy -O binary process2.elf process2.bin
+arm-none-eabi-objcopy -O binary process2.elf ../process2.bin
 
 echo "Disassemble the ELF file to verify addresses ..."
 arm-none-eabi-objdump -D process2.elf > process2.list
