@@ -4,12 +4,28 @@
 .globl _start
 
 _start:
-    ldr sp, =_stack_top
+    // Configurar stack para modo Supervisor (main)
+    ldr sp, =_os_stack_top
+
+    // Cambiar a modo IRQ para configurar su stack
+    cpsid i                @ Desactiva interrupciones
+    mrs r0, cpsr
+    bic r0, r0, #0x1F
+    orr r0, r0, #0x12      @ IRQ mode
+    msr cpsr_c, r0
+    ldr sp, =_irq_stack_top
+
+    // Volver a modo Supervisor
+    mrs r0, cpsr
+    bic r0, r0, #0x1F
+    orr r0, r0, #0x13      @ Supervisor mode
+    msr cpsr_c, r0
+    cpsie i                @ Rehabilita interrupciones
+
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
     bl main
-    b .  @ Loop here instead of hang label
-    b hang
+    b .
 
 hang:
     b hang
@@ -52,5 +68,6 @@ irq_handler:
 .section .bss
 .align 4
 _stack_bottom:
-    .skip 0x2000             @ 8KB stack
+    .skip 0x2000
 _stack_top:
+

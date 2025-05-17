@@ -11,12 +11,13 @@ unsigned int rand(void) {
     return seed;
 }
 
-// Function to send a single character via UART
+__attribute__((noinline))
 void uart_putc(char c) {
-    // Wait until Transmit Holding Register is empty
+    if (c == '\n') {
+        while (!(GET32(UART_LSR) & UART_LSR_THRE));
+        PUT32(UART_THR, '\r');
+    }
     while (!(GET32(UART_LSR) & UART_LSR_THRE));
-    
-    // Write character to Transmit Holding Register
     PUT32(UART_THR, c);
 }
 
@@ -29,12 +30,13 @@ char uart_getc() {
     return (char)GET32(UART_RHR);
 }
 
-// Function to send a string via UART
+__attribute__((noinline))
 void uart_puts(const char *s) {
     while (*s) {
         uart_putc(*s++);
     }
 }
+
 
 // Function to receive a line of input via UART
 void uart_gets_input(char *buffer, int max_length) {
@@ -208,10 +210,10 @@ void timer_init(void) {
     PUT32(TISR, 0x7);
 
     // Step 5: Set load value
-    PUT32(TLDR, 0xFE91CA00);
+    PUT32(TLDR, 0xF8D8F200);
 
     // Step 6: Set counter
-    PUT32(TCRR, 0xFE91CA00);
+    PUT32(TCRR, 0xF8D8F200);
 
     // Step 7: Enable overflow interrupt
     PUT32(TIER, 0x2);
@@ -223,9 +225,9 @@ void timer_init(void) {
 }
 
 void timer_irq_handler(void) {
-    PUT32(TISR, 0x2);
-    PUT32(INTC_CONTROL, 0x1);
-    uart_puts("Tick\n");
+    uart_puts("[IRQ] Tick!\n");
+    PUT32(TISR, 0x2);         // Clear timer overflow
+    PUT32(INTC_CONTROL, 0x1); // Acknowledge interrupt to interrupt controller
 }
 
 void delay_loop(void) {

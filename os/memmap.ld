@@ -1,12 +1,13 @@
 MEMORY
 {
     OS_CODE       : ORIGIN = 0x80000000, LENGTH = 64K
+    IRQ_STACK     : ORIGIN = 0x80007000, LENGTH = 4K
     OS_STACK      : ORIGIN = 0x80008000, LENGTH = 4K
 }
 
 SECTIONS
 {
-    /* OS Code and Data */
+    /* Código y datos */
     . = ORIGIN(OS_CODE);
     .text :
     {
@@ -29,7 +30,11 @@ SECTIONS
         __bss_end__ = .;
     } > OS_CODE
 
-    /* Define OS Stack Top and Bottom */
+    /* Stack modo Supervisor */
     _os_stack_bottom = ORIGIN(OS_STACK);
     _os_stack_top    = ORIGIN(OS_STACK) + LENGTH(OS_STACK);
+
+    /* Stack modo IRQ */
+    _irq_stack_bottom = ORIGIN(IRQ_STACK);
+    _irq_stack_top    = ORIGIN(IRQ_STACK) + LENGTH(IRQ_STACK);
 }
