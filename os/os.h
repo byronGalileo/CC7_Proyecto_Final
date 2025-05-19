@@ -24,7 +24,7 @@ extern void enable_irq(void);
 #define TASK1_ENTRY     ((void (*)(void))0x80010000)
 #define TASK2_ENTRY     ((void (*)(void))0x80020000)
 
-#define NUM_TASKS 3
+#define NUM_TASKS 2
 
 typedef struct {
     int pid;

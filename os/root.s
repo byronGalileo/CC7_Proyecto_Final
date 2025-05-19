@@ -3,8 +3,17 @@
 .code 32
 .globl _start
 
+.extern _os_stack_top
+.extern _os_stack_bottom
+
+.globl STACK_OS_TOP
+.set STACK_OS_TOP, _os_stack_top
+
+.globl STACK_OS_BOTTOM
+.set STACK_OS_BOTTOM, _os_stack_bottom
+
 _start:
-    ldr sp, =_stack_top
+    ldr sp, =_os_stack_top
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
     bl main
@@ -35,40 +44,48 @@ enable_irq:
 vector_table:
     b _start
     b .
+    b svc_handler        @ SVC (Software Interrupt)
     b .
-    b .
-    b .
+    b data_abort_handler @ Data Abort
     b .
     b irq_handler
     b .
 
+.globl irq_handler
 irq_handler:
-    // Save current context
+    ldr sp, =STACK_OS_TOP        @ usar stack seguro del OS
+
     mrs r0, cpsr
     push {r0}
     push {r1-r12, lr}
 
+    // Guardar SP en pcb[current_task].sp
     ldr r1, =pcb
     ldr r2, =current_task
     ldr r3, [r2]
-    lsl r3, r3, #4
+    lsl r3, r3, #4               @ sizeof(PCB) = 16 bytes
     add r1, r1, r3
-    str sp, [r1]              // pcb[current_task].sp = sp
+    str sp, [r1]                 @ pcb[current_task].sp = sp
 
-    bl timer_irq_handler
-    bl context_switch
+    bl timer_irq_handler        @ solo marca tick_flag
 
-    ldr r1, =pcb
-    ldr r2, =current_task
-    ldr r3, [r2]
-    lsl r3, r3, #4
-    add r1, r1, r3
-    ldr sp, [r1]              // sp = pcb[current_task].sp
+    ldr sp, =STACK_OS_TOP       @ restaurar stack OS
+    bl context_switch_and_run
 
-    pop {r1-r12, lr}
-    pop {r0}
-    msr cpsr_c, r0
-    subs pc, lr, #4
+    b hang                      @ nunca debería llegar aquí
+
+
+svc_handler:
+    ldr sp, =STACK_OS_TOP       @ restaurar stack seguro del OS
+    bl context_switch_and_run
+    subs pc, lr, #4             @ regresar al punto de interrupción
+
+data_abort_handler:
+    ldr sp, =STACK_OS_TOP       @ restaurar stack seguro del OS
+    bl uart_puts
+    .asciz "\n[ERROR] Data Abort Exception!\n"
+.loop_abort:
+    b .loop_abort               @ ciclo infinito
 
 .section .bss
 .align 4
