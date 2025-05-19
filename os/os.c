@@ -27,6 +27,11 @@ void timer_irq_handler(void) {
     PUT32(TISR, 0x2);
     PUT32(INTC_CONTROL, 0x1);
     // PRINT("Tick\n");
+    char buf[10];
+    uart_puts("[IRQ] Switching from task ");
+    uart_itoa(current_task, buf);
+    uart_puts(buf);
+    uart_puts("\n");
 }
 
 void delay_loop(void) {
@@ -57,7 +62,13 @@ void os_init_tasks(void) {
 }
 
 void context_switch(void) {
-    current_task = (current_task) % NUM_TASKS;
+    current_task = (current_task + 1) % NUM_TASKS;
+
+    char buf[10];
+    uart_puts("[context_switch] New task: ");
+    uart_itoa(current_task, buf);
+    uart_puts(buf);
+    uart_puts("\n");
 }
 
 void context_switch_and_run(void) {
@@ -104,25 +115,72 @@ void dump_stack(PCB *task, int task_id) {
     }
 }
 
+void print_debug_context(unsigned int sp, unsigned int lr, unsigned int r0, unsigned int cpsr) {
+    char buf[12];
+    uart_puts("[DEBUG] SP: ");
+    uart_itoa(sp, buf);
+    uart_puts(buf);
+    uart_puts("\n");
+
+    uart_puts("[DEBUG] LR: ");
+    uart_itoa(lr, buf);
+    uart_puts(buf);
+    uart_puts("\n");
+
+    uart_puts("[DEBUG] CPSR: ");
+    uart_itoa(cpsr, buf);
+    uart_puts(buf);
+    uart_puts("\n");
+}
+
+void print_cpu_mode(void) {
+    unsigned int cpsr;
+    asm volatile ("mrs %0, cpsr" : "=r" (cpsr));
+
+    unsigned int mode = cpsr & 0x1F;
+
+    uart_puts("[CPU MODE] ");
+
+    switch (mode) {
+        case 0x10: uart_puts("User (USR)\n"); break;
+        case 0x11: uart_puts("FIQ\n"); break;
+        case 0x12: uart_puts("IRQ\n"); break;
+        case 0x13: uart_puts("Supervisor (SVC)\n"); break;
+        case 0x17: uart_puts("Abort\n"); break;
+        case 0x1B: uart_puts("Undefined\n"); break;
+        case 0x1F: uart_puts("System\n"); break;
+        default:
+            uart_puts("Unknown mode: 0x");
+            char buf[10];
+            uart_itoa(mode, buf);
+            uart_puts(buf);
+            uart_puts("\n");
+    }
+}
+
+void print_addr(unsigned int addr) {
+    uart_puts("[DEBUG] current_task @ ");
+    char buf[10];
+    uart_itoa(addr, buf);
+    uart_puts(buf);
+    uart_puts("\n");
+}
+
 int main() {
     PRINT(" \n=================== STARTING OS =================== \n");
     PRINT("Starting...\n");
     PRINT("Init tasks...\n");
+
     os_init_tasks();
     dump_stack(&pcb[0], 0);
     dump_stack(&pcb[1], 1);
     PRINT("Tasks initialized!\n");
 
-    timer_init();
-    enable_irq();
+    timer_init();       // ← mover esto antes
+    enable_irq();       // ← habilitar antes del primer salto
 
-    PRINT("Initial TCRR: \n");
-    PRINT("%x \n", GET32(TCRR)); 
-
-    // Cargar SP inicial y saltar a proceso 1    
     while (1) {
-        //PRINT("%d \n", rand() % 1000);
-        for (volatile int i = 0; i < 100000000; i++);
+        asm volatile("wfi");
     }
     return 0;
 }

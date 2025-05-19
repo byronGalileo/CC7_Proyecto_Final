@@ -1,3 +1,4 @@
+/*os.h*/
 #ifndef OS_H
 #define OS_H
 
@@ -34,7 +35,6 @@ typedef struct {
 } PCB;
 
 extern PCB pcb[NUM_TASKS];
-extern int current_task;
 
 unsigned int rand(void);
 void timer_init(void);

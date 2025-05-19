@@ -1,3 +1,5 @@
+@ file: root.s
+@ brief: Root assembly file for the OS
 .section .text
 .syntax unified
 .code 32
@@ -5,6 +7,12 @@
 
 .extern _os_stack_top
 .extern _os_stack_bottom
+.extern pcb
+.extern current_task
+.extern context_switch
+.extern context_switch_and_run
+.extern timer_irq_handler
+.extern uart_puts
 
 .globl STACK_OS_TOP
 .set STACK_OS_TOP, _os_stack_top
@@ -17,8 +25,7 @@ _start:
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
     bl main
-    b .  @ Loop here instead of hang label
-    b hang
+    b .
 
 hang:
     b hang
@@ -53,39 +60,47 @@ vector_table:
 
 .globl irq_handler
 irq_handler:
-    ldr sp, =STACK_OS_TOP        @ usar stack seguro del OS
+    // Guardar SP del proceso actual en r4
+    mov r4, sp
 
+    // Guardar CPSR y registros del proceso
     mrs r0, cpsr
     push {r0}
-    push {r1-r12, lr}
+    push {r1-r3, r5-r12, lr}     // r4 se omite a propósito
 
     // Guardar SP en pcb[current_task].sp
-    ldr r1, =pcb
-    ldr r2, =current_task
-    ldr r3, [r2]
-    lsl r3, r3, #4               @ sizeof(PCB) = 16 bytes
-    add r1, r1, r3
-    str sp, [r1]                 @ pcb[current_task].sp = sp
+    ldr r0, =current_task
+    ldr r1, [r0]
+    ldr r2, =pcb
+    lsl r1, r1, #4
+    add r2, r2, r1
+    str r4, [r2]                 // pcb[current_task].sp = sp
 
-    bl timer_irq_handler        @ solo marca tick_flag
+    // Cambiar a stack seguro del OS
+    ldr sp, =STACK_OS_TOP
 
-    ldr sp, =STACK_OS_TOP       @ restaurar stack OS
+    // Lógica del OS
+    bl timer_irq_handler
+    bl context_switch
+
+    // Saltar al nuevo proceso
     bl context_switch_and_run
-
-    b hang                      @ nunca debería llegar aquí
-
 
 svc_handler:
     ldr sp, =STACK_OS_TOP       @ restaurar stack seguro del OS
     bl context_switch_and_run
-    subs pc, lr, #4             @ regresar al punto de interrupción
+    movs pc, lr                 @ regresar al punto de interrupción
 
 data_abort_handler:
     ldr sp, =STACK_OS_TOP       @ restaurar stack seguro del OS
+    ldr r0, =abort_msg
     bl uart_puts
-    .asciz "\n[ERROR] Data Abort Exception!\n"
 .loop_abort:
-    b .loop_abort               @ ciclo infinito
+    b .loop_abort
+
+.section .rodata
+abort_msg:
+    .asciz "\n[ERROR] Data Abort Exception!\n"
 
 .section .bss
 .align 4
