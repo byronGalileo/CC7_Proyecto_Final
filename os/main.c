@@ -1,5 +1,5 @@
-#include "os.h"
-#include "stdio.h"
+#include "../lib/interrupt.h"
+#include "../lib/stdio.h"
 
 int main() {
     PRINT(" \n=================== STARTING OS =================== \n");

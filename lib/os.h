@@ -1,9 +1,6 @@
 #ifndef OS_H
 #define OS_H
 #include <stdint.h>
-extern void PUT32(unsigned int, unsigned int);
-extern unsigned int GET32(unsigned int);
-extern void enable_irq(void);
 
 #define UART0_BASE      0x44E09000
 #define UART_THR        (UART0_BASE + 0x00)
@@ -42,6 +39,10 @@ typedef struct {
 
 extern PCB pcb[NUM_TASKS];
 extern int current_task;
+
+extern void PUT32(unsigned int, unsigned int);
+extern unsigned int GET32(unsigned int);
+extern void enable_irq(void);
 
 unsigned int rand(void);
 void uart_putc(char c);

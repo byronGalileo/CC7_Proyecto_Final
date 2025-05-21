@@ -1,5 +1,5 @@
-#include "os.h"
-#include "stdio.h"
+#include "../lib/interrupt.h"
+#include "../lib/stdio.h"
 
 void main() {
     PRINT(" \n=================== STARTING LETTERS =================== \n");

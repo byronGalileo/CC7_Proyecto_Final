@@ -1,5 +1,5 @@
 #include <stdarg.h>
-#include "os.h"
+#include "uart.h"
 #include "stdio.h"
 
 void to_string (int num, char *buffer) {
@@ -20,6 +20,7 @@ void PRINT(const char *format, ...) {
     char buffer[32];
     char c;
     const char *str;
+    const char *hex = "0123456789ABCDEF"; // Hexadecimal digits
 
     // %d: Prints an integer in decimal format.
     // %x: Prints an integer in hexadecimal format.
@@ -35,8 +36,11 @@ void PRINT(const char *format, ...) {
                     uart_puts(buffer);
                     break;
                 case 'x':  // Integer (hexadecimal)
-                    uart_itoa(va_arg(args, int), buffer);
-                    uart_puts(buffer);
+                    unsigned int num = va_arg(args, unsigned int);
+                    uart_puts("0x");
+                    for (int i = 28; i >= 0; i -= 4) {
+                        uart_putc(hex[(num >> i) & 0xF]);
+                    }
                     break;
                 case 's':  // String
                     str = va_arg(args, const char *);
