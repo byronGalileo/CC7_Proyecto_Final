@@ -10,6 +10,7 @@ SECTIONS
     . = ORIGIN(OS_CODE);
     .text :
     {
+        KEEP(*(.vectors))     /* ← Aquí caerá _start desde root.s */
         *(.text*)
         *(.rodata*)
     } > OS_CODE
