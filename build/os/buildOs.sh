@@ -10,7 +10,8 @@ mkdir -p $BUILD_DIR
 mkdir -p $BIN_DIR
 
 echo "Cleaning previous build files..."
-rm -f $BUILD_DIR/*.o $BUILD_DIR/*.elf $BUILD_DIR/*.bin $BUILD_DIR/*.list
+rm -f $BUILD_DIR/*.o $BUILD_DIR/*.elf $BUILD_DIR/*.list
+rm -f $BIN_DIR/$OUTPUT.bin
 
 # Assemble root.s
 echo "Assembling root.s..."
