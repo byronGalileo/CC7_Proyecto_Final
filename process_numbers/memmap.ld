@@ -9,6 +9,7 @@ SECTIONS
   . = ORIGIN(P2_CODE);
   .text :
   {
+    KEEP(*(.vectors))   /* aquí estará _start */
     *(.text*)
     *(.rodata*)
   } > P2_CODE

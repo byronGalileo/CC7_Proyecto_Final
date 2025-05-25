@@ -10,6 +10,7 @@ SECTIONS
   
   .text :
   {
+    KEEP(*(.vectors))   /* aquí estará _start */
     *(.text*)
     *(.rodata*)
   } > P1_CODE

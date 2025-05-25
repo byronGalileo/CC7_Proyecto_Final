@@ -1,4 +1,4 @@
-.section .text
+.section .vectors, "ax"
 .syntax unified
 .code 32
 .globl _start
@@ -11,19 +11,8 @@ _start:
 hang:
     b hang
 
-.globl PUT32
-PUT32:
-    str r1, [r0]
-    bx lr
-
-.globl GET32
-GET32:
-    ldr r0, [r0]
-    bx lr
-
 .section .bss
 .align 4
 _stack_bottom:
     .skip 0x1000 @ Reserve 4KB for stack
 _stack_top:
-

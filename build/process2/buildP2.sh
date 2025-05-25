@@ -2,19 +2,18 @@
 
 set -e
 
-BUILD_DIR=build/os
-OUTPUT=main
+BUILD_DIR=build/process2
+OUTPUT=process2
 
 mkdir -p $BUILD_DIR
 
 echo "Cleaning previous build files..."
 rm -f $BUILD_DIR/*.o $BUILD_DIR/*.elf $BUILD_DIR/*.bin $BUILD_DIR/*.list
 
-# Assemble root.s
-echo "Assembling root.s..."
-arm-none-eabi-as --warn --fatal-warnings os/root.s -o $BUILD_DIR/root.o
+# Assemble startup
+arm-none-eabi-as --warn --fatal-warnings process_numbers/root.s -o $BUILD_DIR/root.o
 
-# Compile C sources
+# Compile sources
 compile() {
   echo "Compiling $1..."
   arm-none-eabi-gcc -c -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=hard \
@@ -22,30 +21,24 @@ compile() {
     $1 -o $BUILD_DIR/$(basename "$1" .c).o
 }
 
-compile os/main.c
-compile core/os.c
-compile core/tasks.c
-compile core/sched.c
-compile core/timer.c
 compile lib/stdio.c
 compile lib/string.c
 compile lib/console.c
+compile core/os.c
 compile drivers/uart.c
 compile drivers/io.c
+compile process_numbers/process2.c
 
-# Link all object files
-echo "Linking object files..."
-arm-none-eabi-gcc -T os/memmap.ld \
+# Link
+arm-none-eabi-gcc -T process_numbers/memmap.ld \
+  -Wl,-e,_start \
   $BUILD_DIR/*.o \
   -o $BUILD_DIR/$OUTPUT.elf \
   -lgcc -lm -nostartfiles -mfpu=neon -mfloat-abi=hard
 
-# Convert to binary
-echo "Converting ELF to binary..."
+# Convert and dump
 arm-none-eabi-objcopy -O binary $BUILD_DIR/$OUTPUT.elf $BUILD_DIR/$OUTPUT.bin
-
-# Disassemble ELF
-echo "Disassemble the ELF file to verify addresses..."
 arm-none-eabi-objdump -D $BUILD_DIR/$OUTPUT.elf > $BUILD_DIR/$OUTPUT.list
 
-echo "Build complete. Output in $BUILD_DIR/"
+echo "Build complete: $BUILD_DIR/$OUTPUT.bin"
+

@@ -1,5 +1,7 @@
-#include "os.h"
-#include "stdio.h"
+// #include "os.h"
+// #include "stdio.h"
+#include "../lib/stdio.h"
+#include "../core/os.h"
 
 void main() {
     PRINT(" \n=================== STARTING NUMBERS =================== \n");

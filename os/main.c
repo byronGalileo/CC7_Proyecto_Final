@@ -1,7 +1,7 @@
-#include "core/os.h"
-#include "core/tasks.h"
-#include "core/timer.h"
-#include "core/sched.h"
+#include "../core/os.h"
+#include "../core/tasks.h"
+#include "../core/timer.h"
+#include "../core/sched.h"
 #include "../lib/stdio.h"
 
 

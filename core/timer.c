@@ -1,8 +1,8 @@
 #include "timer.h"
-#include "../../drivers/io.h"
-#include "../../drivers/uart.h"
+#include "../drivers/io.h"
+#include "../drivers/uart.h"
 #include "../core/tasks.h"
-#include "../../lib/string.h"
+#include "../lib/string.h"
 
 void timer_init(void) {
     PUT32(CM_PER_TIMER2_CLKCTRL, 0x2);
