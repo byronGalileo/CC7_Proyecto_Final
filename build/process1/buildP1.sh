@@ -3,9 +3,11 @@
 set -e
 
 BUILD_DIR=build/process1
+BIN_DIR=build/bin
 OUTPUT=process1
 
 mkdir -p $BUILD_DIR
+mkdir -p $BIN_DIR
 
 echo "Cleaning previous build files..."
 rm -f $BUILD_DIR/*.o $BUILD_DIR/*.elf $BUILD_DIR/*.bin $BUILD_DIR/*.list
@@ -37,7 +39,7 @@ arm-none-eabi-gcc -T process_letters/memmap.ld \
   -lgcc -lm -nostartfiles -mfpu=neon -mfloat-abi=hard
 
 # Convert and dump
-arm-none-eabi-objcopy -O binary $BUILD_DIR/$OUTPUT.elf $BUILD_DIR/$OUTPUT.bin
+arm-none-eabi-objcopy -O binary $BUILD_DIR/$OUTPUT.elf $BIN_DIR/$OUTPUT.bin
 arm-none-eabi-objdump -D $BUILD_DIR/$OUTPUT.elf > $BUILD_DIR/$OUTPUT.list
 
-echo "Build complete: $BUILD_DIR/$OUTPUT.bin"
+echo "Build complete: $BIN_DIR/$OUTPUT.bin"

@@ -3,9 +3,11 @@
 set -e
 
 BUILD_DIR=build/os
+BIN_DIR=build/bin
 OUTPUT=main
 
 mkdir -p $BUILD_DIR
+mkdir -p $BIN_DIR
 
 echo "Cleaning previous build files..."
 rm -f $BUILD_DIR/*.o $BUILD_DIR/*.elf $BUILD_DIR/*.bin $BUILD_DIR/*.list
@@ -42,10 +44,10 @@ arm-none-eabi-gcc -T os/memmap.ld \
 
 # Convert to binary
 echo "Converting ELF to binary..."
-arm-none-eabi-objcopy -O binary $BUILD_DIR/$OUTPUT.elf $BUILD_DIR/$OUTPUT.bin
+arm-none-eabi-objcopy -O binary $BUILD_DIR/$OUTPUT.elf $BIN_DIR/$OUTPUT.bin
 
 # Disassemble ELF
 echo "Disassemble the ELF file to verify addresses..."
 arm-none-eabi-objdump -D $BUILD_DIR/$OUTPUT.elf > $BUILD_DIR/$OUTPUT.list
 
-echo "Build complete. Output in $BUILD_DIR/"
+echo "Build complete: $BIN_DIR/$OUTPUT.bin"
