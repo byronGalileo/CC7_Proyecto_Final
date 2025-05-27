@@ -17,11 +17,12 @@ void timer_init(void) {
 }
 
 void timer_irq_handler(void) {
-    char buf[10];
     PUT32(TISR, 0x2);
     PUT32(INTC_CONTROL, 0x1);
-    uart_puts("Tick - Task ");
+    // PRINT("Tick\n");
+    char buf[10];
+    uart_puts("[IRQ] Switching from task ");
     uart_itoa(current_task, buf);
     uart_puts(buf);
-    uart_putc('\n');
+    uart_puts("\n");
 }

@@ -3,5 +3,6 @@
 
 extern int current_task;
 void context_switch(void);
+void context_switch_and_run(void);
 
 #endif

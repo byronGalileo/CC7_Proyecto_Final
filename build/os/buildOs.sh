@@ -20,9 +20,9 @@ arm-none-eabi-as --warn --fatal-warnings os/root.s -o $BUILD_DIR/root.o
 compile() {
   echo "Compiling $1..."
   arm-none-eabi-gcc -c -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=hard \
-    -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding \
+    -Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding  -O0 -g -Wno-array-bounds \
     $1 -o $BUILD_DIR/$(basename "$1" .c).o
-}
+} 
 
 compile os/main.c
 compile core/os.c
@@ -34,6 +34,7 @@ compile lib/string.c
 compile lib/console.c
 compile drivers/uart.c
 compile drivers/io.c
+compile core/wd.c
 
 # Link all object files
 echo "Linking object files..."

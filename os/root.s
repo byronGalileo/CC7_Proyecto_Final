@@ -1,19 +1,19 @@
+@ file: root.s
+@ brief: Root assembly file for the OS
 .section .vectors, "ax"
 .syntax unified
 .code 32
 .globl _start
 
 _start:
-    ldr sp, =_stack_top
+    ldr sp, =_os_stack_top
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
     bl main
-    b .  @ Loop here instead of hang label
-    b hang
+    b .
 
 hang:
     b hang
-
 
 .globl enable_irq
 enable_irq:
@@ -26,40 +26,56 @@ enable_irq:
 vector_table:
     b _start
     b .
+    b svc_handler        @ SVC (Software Interrupt)
     b .
-    b .
-    b .
+    b data_abort_handler @ Data Abort
     b .
     b irq_handler
     b .
 
+.globl irq_handler
 irq_handler:
-    // Save current context
+    // Guardar SP del proceso actual en r4
+    mov r4, sp
+
+    // Guardar CPSR y registros del proceso
     mrs r0, cpsr
     push {r0}
-    push {r1-r12, lr}
+    push {r1-r3, r5-r12, lr}     // r4 se omite a propósito
 
-    ldr r1, =pcb
-    ldr r2, =current_task
-    ldr r3, [r2]
-    lsl r3, r3, #4
-    add r1, r1, r3
-    str sp, [r1]              // pcb[current_task].sp = sp
+    // Guardar SP en pcb[current_task].sp
+    ldr r0, =current_task
+    ldr r1, [r0]
+    ldr r2, =pcb
+    lsl r1, r1, #4
+    add r2, r2, r1
+    str r4, [r2]                 // pcb[current_task].sp = sp
 
+    // Cambiar a stack seguro del OS
+    ldr sp, =_os_stack_top
+
+    // Lógica del OS
     bl timer_irq_handler
     bl context_switch
 
-    ldr r1, =pcb
-    ldr r2, =current_task
-    ldr r3, [r2]
-    lsl r3, r3, #4
-    add r1, r1, r3
-    ldr sp, [r1]              // sp = pcb[current_task].sp
+    // Saltar al nuevo proceso
+    bl context_switch_and_run
 
-    pop {r1-r12, lr}
-    pop {r0}
-    msr cpsr_c, r0
-    subs pc, lr, #4
+svc_handler:
+    ldr sp, =_os_stack_top       @ restaurar stack seguro del OS
+    bl context_switch_and_run
+    movs pc, lr                 @ regresar al punto de interrupción
+
+data_abort_handler:
+    ldr sp, =_os_stack_top       @ restaurar stack seguro del OS
+    ldr r0, =abort_msg
+    bl uart_puts
+.loop_abort:
+    b .loop_abort
+
+.section .rodata
+abort_msg:
+    .asciz "\n[ERROR] Data Abort Exception!\n"
 
 .section .bss
 .align 4

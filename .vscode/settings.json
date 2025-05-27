@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stdio.h": "c"
+    },
+    "conventionalCommits.scopes": [
+        "Switching"
+    ]
+}
