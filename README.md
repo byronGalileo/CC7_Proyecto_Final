@@ -127,6 +127,35 @@ Esto generaba bucles infinitos si el hardware no respondía como se esperaba o s
 - Se evitó el uso de `uart_puts` dentro de interrupciones críticas, delegando solo a funciones directas tipo `str r1, [r0]` para enviar un carácter.
 
 ---
+### 4. Error de símbolo `_text` duplicado al linkear
+
+**Síntoma:** Al intentar enlazar el SO, el linker arrojaba un error sobre la definición duplicada de `_text`.
+
+**Causa:** Algunos `root.s` de procesos también tenían secciones de vectores mal definidas o etiquetas en conflicto global.
+
+**Solución:** Se renombraron o aislaron adecuadamente las secciones `.vectors` para evitar solapamientos y se revisaron los `memmap.ld` para asegurar la correcta definición del punto de entrada.
+
+---
+
+### 5. Error al hacer context switching: stack no válido
+
+**Síntoma:** Al intentar cambiar de contexto, el sistema fallaba silenciosamente o se colgaba.
+
+**Causa:** El stack del handler no estaba correctamente definido o apuntado, por lo que al recuperar el contexto del nuevo proceso, se usaba una dirección inválida.
+
+**Solución:** Se definió una región de stack dedicada para el handler y se ajustaron las rutinas `context_switch` y `context_switch_and_run` para usar stacks válidos al restaurar el contexto.
+
+---
+
+### 6. Error actual: caracteres inválidos tras switching
+
+**Síntoma:** El sistema corre, cambia de tarea correctamente, pero los caracteres impresos por los procesos no tienen sentido o son símbolos extraños.
+
+**Causa:** Posible corrupción del contexto restaurado o problema en la alineación de memoria en `stack` o registros.
+
+**Estado:** Aún no resuelto. Este error impidió entregar el proyecto completamente funcional, aunque la lógica principal del sistema operativo (arranque, interrupciones, switching) ya está operativa.
+
+---
 
 ##  Estructura del Proyecto
 
