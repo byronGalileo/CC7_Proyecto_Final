@@ -6,7 +6,7 @@ Este proyecto tiene como propósito construir un sistema operativo mínimo que c
 
 En esta fase inicial se logró:
 
-- Configurar el entorno de ejecución en modo Supervisor e IRQ.
+- Configurar el entorno de ejecución en modo Usuario e IRQ.
 - Establecer correctamente las direcciones de memoria para código, stack del sistema y stack de interrupciones.
 - Configurar el temporizador DMTIMER2 para generar interrupciones periódicas.
 - Capturar y manejar correctamente interrupciones en ARM.
@@ -16,14 +16,14 @@ En esta fase inicial se logró:
 
 ## Organización de memoria
 
-La memoria fue segmentada para cumplir con los requerimientos de diferentes modos de ejecución del procesador ARM (Supervisor, IRQ) y evitar solapamientos. Se utilizó un linker script (`memmap.ld`) que define las siguientes áreas:
+La memoria fue segmentada para cumplir con los requerimientos de diferentes modos de ejecución del procesador ARM (Usuario, IRQ) y evitar solapamientos. Se utilizó un linker script (`memmap.ld`) que define las siguientes áreas:
 
 ```
 Dirección        Región             Propósito
 ───────────────  ─────────────────  ──────────────────────────────────────
 0x80000000       OS_CODE            Código del sistema operativo (64KB)
 0x80007000       IRQ_STACK          Stack exclusivo del modo IRQ (4KB)
-0x80008000       OS_STACK           Stack del modo Supervisor (4KB)
+0x80008000       OS_STACK           Stack del modo Usuario (4KB)
 0x80010000       PROCESS1_CODE      Código del proceso de letras
 0x80018000       PROCESS1_STACK     Stack del proceso 1
 0x80020000       PROCESS2_CODE      Código del proceso de números
@@ -38,9 +38,9 @@ Cada modo del CPU ARM posee su propio registro de stack pointer (`sp`). Si no se
 
 Al arrancar el sistema, se realiza lo siguiente en el código ensamblador (`root.s`):
 
-1. **Configuración del stack para modo Supervisor** (`_os_stack_top`).
+1. **Configuración del stack para modo Usuario** (`_os_stack_top`).
 2. **Cambio temporal al modo IRQ** y configuración de su stack (`_irq_stack_top`).
-3. **Regreso a modo Supervisor** y habilitación global de interrupciones (`cpsie i`).
+3. **Regreso a modo Usuario** y habilitación global de interrupciones (`cpsie i`).
 4. **Definición del vector de interrupciones** mediante `mcr p15, 0, r0, c12, c0, 0`.
 5. **Llamada a `main()`** para iniciar el flujo principal en C.
 
